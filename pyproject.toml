@@ -1,0 +1,8 @@
+[project]
+name = "api-debugger-submission"
+version = "0.1.0"
+description = "Hackathon submission for OpenEnv"
+dependencies = [
+    "openai",
+    "pydantic"
+]
