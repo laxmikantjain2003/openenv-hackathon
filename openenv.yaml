@@ -1,0 +1,18 @@
+name: "api-debugger-agent"
+version: "1.0.0"
+description: "An environment where an AI agent acts as a backend engineer to debug and fix failing API requests based on server logs and error codes."
+tasks:
+  - id: "task_1_easy_auth"
+    difficulty: "easy"
+    description: "Fix a 401 Unauthorized error by providing the correct authorization header."
+  - id: "task_2_medium_payload"
+    difficulty: "medium"
+    description: "Fix a 400 Bad Request error by correcting a malformed JSON payload."
+  - id: "task_3_hard_db_query"
+    difficulty: "hard"
+    description: "Fix a 500 Internal Server Error by identifying and correcting an invalid database query parameter in the API URL."
+tags:
+  - "debugging"
+  - "api"
+  - "backend"
+  - "software-engineering"
