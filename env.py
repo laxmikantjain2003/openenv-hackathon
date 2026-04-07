@@ -54,7 +54,7 @@ class ApiDebuggerEnv:
             self.last_status = 500
         else:
             raise ValueError(f"Unknown task_id: {task_id}")
-
+            
         return self._get_obs(logs)
 
     def state(self) -> Observation:
@@ -81,30 +81,29 @@ class ApiDebuggerEnv:
         if action.action_type == "update_header" and action.key:
             self.request_state["headers"][action.key] = action.value
             logs = f"[INFO] Header '{action.key}' updated to '{action.value}'."
-            reward = 0.1  # Partial reward for attempting to fix
+            reward = 0.1  
             
         elif action.action_type == "update_payload" and action.key:
             self.request_state["payload"][action.key] = action.value
             logs = f"[INFO] Payload field '{action.key}' updated to '{action.value}'."
-            reward = 0.1  # Partial reward
+            reward = 0.1  
             
         elif action.action_type == "update_url" and action.value:
             self.request_state["url"] = action.value
             logs = f"[INFO] URL updated to '{action.value}'."
-            reward = 0.1  # Partial reward
+            reward = 0.1  
             
         elif action.action_type == "submit":
             return self._evaluate_submission()
             
         else:
             logs = "[WARNING] Invalid action format or missing key/value."
-            reward = -0.1 # Penalty for bad action syntax
+            reward = -0.1 
 
-        # Check max steps (prevent infinite loops)
         if self.step_count >= self.max_steps:
             done = True
             logs += " [SYSTEM] Max steps reached. Terminating episode."
-
+            
         return StepResult(
             observation=self._get_obs(logs),
             reward=reward,
@@ -113,47 +112,45 @@ class ApiDebuggerEnv:
         )
 
     def _evaluate_submission(self) -> StepResult:
-        """GRADER: Checks if the problem is perfectly fixed when agent clicks submit."""
+        """GRADER: Checks if the problem is fixed with strictly (0, 1) scores."""
         done = True
-        reward = 0.0
+        reward = 0.01  # Changed default 0.0 to 0.01
         logs = ""
-        
+                
         if self.current_task == "task_1_easy_auth":
             auth_header = self.request_state["headers"].get("Authorization", "")
             if auth_header == "Bearer secret_token":
                 self.last_status = 200
-                reward = 1.0 # 100% Correct
+                reward = 0.99  # Changed 1.0 to 0.99
                 logs = "[SUCCESS] 200 OK: Authentication successful."
             else:
                 self.last_status = 401
-                reward = 0.0
+                reward = 0.01  # Changed 0.0 to 0.01
                 logs = "[ERROR] 401 Unauthorized: Authorization header missing or incorrect."
-
+                
         elif self.current_task == "task_2_medium_payload":
             age = self.request_state["payload"].get("age")
             try:
-                # Check if age can be converted to integer
                 int_age = int(age)
                 self.last_status = 200
-                reward = 1.0 # 100% Correct
+                reward = 0.99  # Changed 1.0 to 0.99
                 logs = "[SUCCESS] 200 OK: Payload validation passed."
             except (ValueError, TypeError):
                 self.last_status = 400
-                reward = 0.2 # Small reward for submitting, but failed validation
+                reward = 0.2  
                 logs = f"[ERROR] 400 Bad Request: 'age' ({age}) is still not an integer."
-
+                
         elif self.current_task == "task_3_hard_db_query":
             url = self.request_state.get("url", "")
-            # Check if SQL injection keywords are removed
             if "SELECT" not in url.upper() and url.startswith("/api/search?query=") and len(url) > 18:
                 self.last_status = 200
-                reward = 1.0 # 100% Correct
+                reward = 0.99  # Changed 1.0 to 0.99
                 logs = "[SUCCESS] 200 OK: Safe database query executed."
             else:
                 self.last_status = 500
-                reward = 0.0
+                reward = 0.01  # Changed 0.0 to 0.01
                 logs = "[FATAL] 500 Internal Server Error: Unsafe query detected."
-
+                
         return StepResult(
             observation=self._get_obs(logs),
             reward=reward,

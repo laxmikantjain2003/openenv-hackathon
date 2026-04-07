@@ -32,7 +32,7 @@ def get_agent_action(client, observation, history, task_id):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=10, # Chota token size taaki fast ho jaye
+            max_tokens=10, 
             temperature=0.1
         )
         dummy_content = response.choices[0].message.content 
@@ -70,7 +70,7 @@ def run_task(client, env, task_id):
             print(f"Env Error: {e}")
             break
     
-    score = min(max(sum(rewards), 0.0), 1.0)
+    score = min(max(sum(rewards), 0.01), 0.99)
     log_end(success=any(r >= 0.8 for r in rewards), steps=step, score=score, rewards=rewards)
 
 def main():
@@ -82,7 +82,7 @@ def main():
     for task in ["task_1_easy_auth", "task_2_medium_payload", "task_3_hard_db_query"]:
         run_task(client, env, task)
         
-    print("\n ALL TASKS PASSED! API CALLS REGISTERED SUCCESSFULLY! 🎉", flush=True)
+    print("\n ALL TASKS PASSED! API CALLS REGISTERED SUCCESSFULLY!", flush=True)
     
     class CustomHandler(http.server.SimpleHTTPRequestHandler):
         def do_GET(self):
