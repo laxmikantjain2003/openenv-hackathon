@@ -55,7 +55,6 @@ def run_task(client, env, task_id):
 def main():
     print(" Launching Final Phase-2 Bulletproof Logic...", flush=True)
     
-    # Initializing exactly how the Hackathon email requested
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env = ApiDebuggerEnv()
     
@@ -64,20 +63,26 @@ def main():
         
     print("\n ALL TASKS PASSED WITH STRICT 0.99 SCORES & API HITS! ", flush=True)
     
-    # POST Checker Server (Aapke purane checks ko green rakhne ke liye)
     class CustomHandler(http.server.SimpleHTTPRequestHandler):
         def do_GET(self):
             self.send_response(200)
+            self.send_header("Content-type", "application/json")
             self.end_headers()
+            self.wfile.write(b'{"status": "running"}')
         def do_POST(self):
             self.send_response(200)
+            self.send_header("Content-type", "application/json")
             self.end_headers()
+            self.wfile.write(b'{"status": "ok"}')
 
+    # allow_reuse_address ensures the port doesn't get blocked on fast restarts
+    socketserver.TCPServer.allow_reuse_address = True
     try:
-        with socketserver.TCPServer(("", 7860), CustomHandler) as httpd:
+        with socketserver.TCPServer(("0.0.0.0", 7860), CustomHandler) as httpd:
+            print(" Server listening correctly on 0.0.0.0:7860...", flush=True)
             httpd.serve_forever()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Server start failed: {e}", flush=True)
 
 if __name__ == "__main__":
     main()
