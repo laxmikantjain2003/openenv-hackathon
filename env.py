@@ -49,10 +49,10 @@ class ApiDebuggerEnv:
         return Observation(server_logs=logs, current_request=self.request_state, last_status_code=self.last_status, task_objective=str(self.current_task))
 
     def _evaluate(self) -> float:
-        """Returns a strict score: 0.15 (Fail), 0.45 (Partial), 0.95 (Success)"""
+        """Returns a strictly rounded score: 0.15 (Fail), 0.45 (Partial), 0.85 (Success)"""
         if self.current_task == "task_1_easy_auth":
             val = self.request_state.get("headers", {}).get("Authorization", "")
-            if val == "Bearer secret_token": return 0.95
+            if val == "Bearer secret_token": return 0.85
             if val != "": return 0.45
             return 0.15
 
@@ -60,14 +60,14 @@ class ApiDebuggerEnv:
             age = self.request_state.get("payload", {}).get("age", "")
             try:
                 int(age)
-                return 0.95
+                return 0.85
             except:
                 if age != "twenty_five": return 0.45
                 return 0.15
 
         elif self.current_task == "task_3_hard_db_query":
             url = self.request_state.get("url", "")
-            if "SELECT" not in url.upper() and "safe" in url.lower(): return 0.95
+            if "SELECT" not in url.upper() and "safe" in url.lower(): return 0.85
             if url != "/api/search?query=SELECT*FROM_USERS": return 0.45
             return 0.15
 
@@ -78,7 +78,6 @@ class ApiDebuggerEnv:
         done = False
         logs = "Action applied."
 
-        # Apply state changes
         if action.action_type == "update_header" and action.key:
             self.request_state.setdefault("headers", {})[action.key] = action.value
         elif action.action_type == "update_payload" and action.key:
@@ -86,14 +85,14 @@ class ApiDebuggerEnv:
         elif action.action_type == "update_url" and action.value:
             self.request_state["url"] = action.value
 
-        target_score = self._evaluate()
+        current_score = self._evaluate()
 
         if action.action_type == "submit" or self.step_count >= self.max_steps:
             done = True
+            reward = round(current_score - self.accumulated_reward, 4)
         else:
-            target_score *= 0.8  
+            reward = round(current_score * 0.1, 4)
 
-        reward = target_score - self.accumulated_reward
-        self.accumulated_reward += reward
+        self.accumulated_reward = round(self.accumulated_reward + reward, 4)
 
-        return StepResult(observation=self._get_obs(logs), reward=reward, done=done, info={"step": self.step_count, "score": target_score})
+        return StepResult(observation=self._get_obs(logs), reward=reward, done=done, info={"step": self.step_count, "score": current_score})
