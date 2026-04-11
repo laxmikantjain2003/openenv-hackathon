@@ -44,19 +44,25 @@ class ApiDebuggerEnv:
         return self._get_obs("Environment reset.")
 
     def _get_obs(self, logs: str) -> Observation:
-        return Observation(server_logs=logs, current_request=self.request_state, last_status_code=self.last_status, task_objective=str(self.current_task))
+        return Observation(
+            server_logs=logs, 
+            current_request=self.request_state, 
+            last_status_code=self.last_status, 
+            task_objective=str(self.current_task)
+        )
 
     def step(self, action: Action) -> StepResult:
         self.step_count += 1
         done = False
         logs = "Action applied."
         
-        reward = 0.001  
-
+        # Apply changes
         if action.action_type == "update_header" and action.key:
-            self.request_state.setdefault("headers", {})[action.key] = action.value
+            if "headers" not in self.request_state: self.request_state["headers"] = {}
+            self.request_state["headers"][action.key] = action.value
         elif action.action_type == "update_payload" and action.key:
-            self.request_state.setdefault("payload", {})[action.key] = action.value
+            if "payload" not in self.request_state: self.request_state["payload"] = {}
+            self.request_state["payload"][action.key] = action.value
         elif action.action_type == "update_url" and action.value:
             self.request_state["url"] = action.value
         elif action.action_type == "submit":
@@ -65,27 +71,30 @@ class ApiDebuggerEnv:
         if self.step_count >= self.max_steps:
             done = True
 
-        final_score = 0.05 
-
+        reward = 0.0 
+        
         if done:
-            # Final Grading Logic
+            # Final grading strictly assigns 0.01, 0.50, or 0.99
             if self.current_task == "task_1_easy_auth":
                 val = self.request_state.get("headers", {}).get("Authorization", "")
-                if val == "Bearer secret_token": final_score = 0.95
-                elif val != "": final_score = 0.45
+                if val == "Bearer secret_token": reward = 0.99
+                elif val != "": reward = 0.50
+                else: reward = 0.01
+                
             elif self.current_task == "task_2_medium_payload":
                 age = self.request_state.get("payload", {}).get("age", "")
                 try:
                     int(age)
-                    final_score = 0.95
+                    reward = 0.99
                 except:
-                    if age != "twenty_five": final_score = 0.45
+                    if age != "twenty_five" and age != "": reward = 0.50
+                    else: reward = 0.01
+                    
             elif self.current_task == "task_3_hard_db_query":
                 url = self.request_state.get("url", "")
-                if "SELECT" not in url.upper() and "safe" in url.lower(): final_score = 0.95
-                elif url != "/api/search?query=SELECT*FROM_USERS": final_score = 0.45
-
-            reward = final_score
+                if "SELECT" not in url.upper() and "query=" in url: reward = 0.99
+                elif url != "/api/search?query=SELECT*FROM_USERS": reward = 0.50
+                else: reward = 0.01
 
         return StepResult(
             observation=self._get_obs(logs), 
