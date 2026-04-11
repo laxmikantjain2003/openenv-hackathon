@@ -43,8 +43,7 @@ def run_task(client, env, task_id):
             step_result = env.step(action)
             reward, done = step_result.reward, step_result.done
             rewards.append(reward)
-            # Yahan ab Reward 0.01 aur 0.85 print hoga (0.00 kabhi nahi aayega)
-            print(f"[STEP] {step} | Action: {json.dumps(action.model_dump())} | Reward: {reward:.2f} | Done: {done}", flush=True)
+            print(f"[STEP] {step} | Action: {json.dumps(action.model_dump())} | Reward: {reward:.4f} | Done: {done}", flush=True)
         except Exception as e:
             print(f"Env Error: {e}", flush=True)
             break
@@ -53,7 +52,7 @@ def run_task(client, env, task_id):
     print(f"[END] Success: True | Steps: {step} | Final Score: {score:.2f} | Rewards: {rewards}", flush=True)
 
 def main():
-    print(" Launching Ultimate Zero-Free Fix...", flush=True)
+    print(" Launching Monotonic Reward Fix...", flush=True)
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env = ApiDebuggerEnv()
     
