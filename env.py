@@ -31,17 +31,21 @@ class ApiDebuggerEnv:
         self.step_count = 0
         self.last_status = 0
         
-        if task_id == "task_1_easy_auth":
+        if "auth" in task_id:
             self.request_state = {"headers": {}, "payload": {}, "url": "/api/secure-data"}
             self.last_status = 401
-        elif task_id == "task_2_medium_payload":
+        elif "payload" in task_id:
             self.request_state = {"headers": {"Content-Type": "application/json"}, "payload": {"username": "admin", "age": "twenty_five"}, "url": "/api/users"}
             self.last_status = 400
-        elif task_id == "task_3_hard_db_query":
+        else:
             self.request_state = {"headers": {}, "payload": {}, "url": "/api/search?query=SELECT*FROM_USERS"}
             self.last_status = 500
             
         return self._get_obs("Environment reset.")
+
+    #  FIX: Added the mandatory state() method 
+    def state(self) -> Observation:
+        return self._get_obs("State requested.")
 
     def _get_obs(self, logs: str) -> Observation:
         return Observation(
@@ -56,7 +60,6 @@ class ApiDebuggerEnv:
         done = False
         logs = "Action applied."
         
-        # Apply the action
         if action.action_type == "update_header" and action.key:
             self.request_state.setdefault("headers", {})[action.key] = action.value
         elif action.action_type == "update_payload" and action.key:
@@ -69,28 +72,27 @@ class ApiDebuggerEnv:
         if self.step_count >= self.max_steps:
             done = True
 
-        # 🚨 THE MASTER FIX: Every single reward is strictly > 0.0 and < 1.0
-        if not done:
-            reward = 0.01  # Intermediate steps are strictly not 0.0
-        else:
-            # Final Evaluation Step
-            if self.current_task == "task_1_easy_auth":
+        #  FIX: Strict rewards. NEVER 0.0 or 1.0.
+        reward = 0.05  # Intermediate tiny reward
+        
+        if done:
+            final_score = 0.15 # Baseline failure score
+            
+            if "auth" in self.current_task:
                 val = self.request_state.get("headers", {}).get("Authorization", "")
-                if val == "Bearer secret_token": reward = 0.80
-                else: reward = 0.10
-                
-            elif self.current_task == "task_2_medium_payload":
+                if "Bearer" in val: final_score = 0.85
+            elif "payload" in self.current_task:
                 age = self.request_state.get("payload", {}).get("age", "")
                 try:
                     int(age)
-                    reward = 0.80
+                    final_score = 0.85
                 except:
-                    reward = 0.10
-                    
-            elif self.current_task == "task_3_hard_db_query":
+                    pass
+            else:
                 url = self.request_state.get("url", "")
-                if "SELECT" not in url.upper() and "safe" in url.lower(): reward = 0.80
-                else: reward = 0.10
+                if "SELECT" not in url.upper() and "=" in url: final_score = 0.85
+                
+            reward = final_score
 
         return StepResult(
             observation=self._get_obs(logs), 

@@ -52,7 +52,7 @@ def run_task(client, env, task_id):
     print(f"[END] Success: True | Steps: {step} | Final Score: {score:.2f} | Rewards: {rewards}", flush=True)
 
 def main():
-    print(" Launching Ultimate Unbreakable Math...", flush=True)
+    print(" Launching Ultimate Hackathon Clear...", flush=True)
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     env = ApiDebuggerEnv()
     
