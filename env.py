@@ -96,7 +96,6 @@ class ApiDebuggerEnv:
         if self.step_count >= self.max_steps:
             done = True
 
-        #  THE MASTER FIX: Monotonic Rewards (No Negative Penalties Ever!)
         new_score = self._get_state_score()
         reward = 0.0
         
